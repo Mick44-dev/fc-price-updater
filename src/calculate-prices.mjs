@@ -5,6 +5,14 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ratios = JSON.parse(readFileSync(resolve(__dirname, '../ratios.json'), 'utf8'));
 
+const suppliersConfig = JSON.parse(readFileSync(resolve(__dirname, '../parsers/suppliers.json'), 'utf8'));
+
+function applyRemise(pvpHT, supplierName) {
+  const config = suppliersConfig[supplierName];
+  if (!config) return pvpHT;
+  return pvpHT * (1 - config.remise);
+}
+
 export function calculatePrices(prixAchatHT) {
   const prixVentePublicEUR = prixAchatHT * ratios.marginPublic;
   const prixVentePublicAUD = prixVentePublicEUR / ratios.exchangeRate;
@@ -26,7 +34,8 @@ export function calculatePrices(prixAchatHT) {
 
 export function buildDiff(matchedItems) {
   return matchedItems.map(item => {
-    const newPrices = calculatePrices(item.priceHT);
+    const prixAchatHT = applyRemise(item.priceHT, item.supplier);
+    const newPrices = calculatePrices(prixAchatHT);
     const oldPrices = {
       prixAchatHT: item.catalogue.prixActuel,
       prixVentePublicEUR: item.catalogue.prixVentePublicEUR,
@@ -37,15 +46,20 @@ export function buildDiff(matchedItems) {
       prixGrossisteAUD: item.catalogue.prixGrossisteAUD
     };
 
+    const pctChange = oldPrices.prixAchatHT > 0
+      ? ((newPrices.prixAchatHT - oldPrices.prixAchatHT) / oldPrices.prixAchatHT * 100).toFixed(1)
+      : '0.0';
+
     return {
       sku: item.catalogue.sku,
       ref: item.ref,
       nom: item.catalogue.nomProduit,
       collection: item.catalogue.collection,
       fournisseur: item.supplier,
+      pvpHT: Math.round(item.priceHT * 100) / 100,
       old: oldPrices,
       new: newPrices,
-      ecart: item.ecart,
+      ecart: pctChange,
       ecartEUR: Math.round((newPrices.prixAchatHT - oldPrices.prixAchatHT) * 100) / 100
     };
   });

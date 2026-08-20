@@ -34,23 +34,27 @@ function parseExcel(filePath, supplierName) {
     const headerRow = sheetConfig.headerRow || 0;
     const headers = data[headerRow] || [];
 
+    const normalizeHeader = h => String(h).replace(/[\r\n]+/g, ' ').trim().toLowerCase();
+
     const refIdx = headers.findIndex(h =>
-      String(h).trim().toLowerCase() === sheetConfig.refColumn.toLowerCase()
+      normalizeHeader(h) === sheetConfig.refColumn.toLowerCase()
     );
-    const priceIdx = headers.findIndex(h =>
-      String(h).trim().toLowerCase().includes(sheetConfig.priceLabel.toLowerCase()) ||
-      String(h).trim().toLowerCase() === sheetConfig.priceColumn.toLowerCase()
-    );
-    const desIdx = headers.findIndex(h =>
-      String(h).trim().toLowerCase().includes('désignation') ||
-      String(h).trim().toLowerCase().includes('designation')
-    );
-    const eanIdx = headers.findIndex(h =>
-      String(h).trim().toLowerCase().includes('ean') ||
-      String(h).trim().toLowerCase().includes('code barre')
-    );
+    const priceLabelNorm = sheetConfig.priceLabel ? sheetConfig.priceLabel.replace(/[\r\n]+/g, ' ').toLowerCase() : '';
+    const priceColNorm = sheetConfig.priceColumn.toLowerCase();
+    const priceIdx = headers.findIndex(h => {
+      const nh = normalizeHeader(h);
+      return nh.includes(priceLabelNorm) || nh === priceColNorm;
+    });
+    const desIdx = headers.findIndex(h => {
+      const nh = normalizeHeader(h);
+      return nh.includes('désignation') || nh.includes('designation');
+    });
+    const eanIdx = headers.findIndex(h => {
+      const nh = normalizeHeader(h);
+      return nh.includes('ean') || nh.includes('code barre');
+    });
     const pcbIdx = headers.findIndex(h =>
-      String(h).trim().toLowerCase() === 'pcb'
+      normalizeHeader(h) === 'pcb'
     );
 
     if (refIdx === -1 || priceIdx === -1) {

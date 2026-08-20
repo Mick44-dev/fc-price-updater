@@ -10,7 +10,7 @@
     "process": "node src/process-all.mjs"
   },
   "dependencies": {
-    "xlsx": "^0.18.5",
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.1",
+    "xlsx": "^0.18.5"
   }
 }
