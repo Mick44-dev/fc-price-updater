@@ -1,0 +1,16 @@
+{
+  "name": "fc-price-updater",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "French Connoisseur — Automated supplier price update pipeline",
+  "scripts": {
+    "parse": "node src/parse-tarif.mjs",
+    "match": "node src/match-catalogue.mjs",
+    "calculate": "node src/calculate-prices.mjs",
+    "process": "node src/process-all.mjs"
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5",
+    "pdf-parse": "^1.1.1"
+  }
+}

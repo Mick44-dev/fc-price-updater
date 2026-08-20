@@ -1,0 +1,22 @@
+{
+  "CRISTEL": {
+    "remise": 0.536,
+    "tva": 0.20,
+    "priceIsTTC": true,
+    "filePattern": "CRISTEL",
+    "sheets": {
+      "SETS": {
+        "refColumn": "Code Article",
+        "priceColumn": "PVP TTC",
+        "priceLabel": "PVP TTC 2026 (T26)",
+        "headerRow": 3
+      },
+      "FRANCE S": {
+        "refColumn": "Code Article",
+        "priceColumn": "PVP TTC",
+        "priceLabel": "PVP TTC 2026 (T26)",
+        "headerRow": 3
+      }
+    }
+  }
+}

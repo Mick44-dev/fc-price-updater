@@ -1,0 +1,10 @@
+{
+  "exchangeRate": 0.56,
+  "exchangeRateLabel": "1 AU$ = 0.56 EUR",
+  "marginPublic": 2.4,
+  "marginWholesale": 2.0,
+  "gst": 0.10,
+  "paypalFee": 0.04,
+  "stripeFee": 0.029,
+  "stripeConversionFee": 0.049
+}

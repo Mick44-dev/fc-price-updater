@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>French Connoisseur — Price Validation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+  <header class="header">
+    <img src="https://www.frenchconnoisseur.com.au/cdn/shop/files/logo-embleme.png?v=1782913967&width=300" alt="French Connoisseur" class="logo">
+    <h1>Price Update Validation</h1>
+    <p class="subtitle" id="subtitle">Loading...</p>
+  </header>
+
+  <div class="summary-bar" id="summaryBar">
+    <div class="summary-item">
+      <span class="summary-label">Supplier</span>
+      <span class="summary-value" id="sumSupplier">—</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Products</span>
+      <span class="summary-value" id="sumTotal">0</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Selected</span>
+      <span class="summary-value" id="sumSelected">0</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Avg change</span>
+      <span class="summary-value" id="sumAvgChange">0%</span>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="btn btn-sm" id="btnSelectAll">Select all</button>
+      <button class="btn btn-sm" id="btnDeselectAll">Deselect all</button>
+      <button class="btn btn-sm" id="btnSelectUp">Select price ↑</button>
+      <button class="btn btn-sm" id="btnSelectDown">Select price ↓</button>
+    </div>
+    <div class="toolbar-right">
+      <input type="text" class="search" id="searchInput" placeholder="Search by ref or name...">
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="priceTable">
+      <thead>
+        <tr>
+          <th class="col-check"><input type="checkbox" id="checkAll"></th>
+          <th class="col-sku">SKU</th>
+          <th class="col-ref">Ref</th>
+          <th class="col-name">Product</th>
+          <th class="col-collection">Collection</th>
+          <th class="col-price old">Old Buy (EUR)</th>
+          <th class="col-price new">New Buy (EUR)</th>
+          <th class="col-change">Change</th>
+          <th class="col-price aud">Sell AUD</th>
+          <th class="col-price aud">GST AUD</th>
+          <th class="col-override">Override AUD</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="btnValidate" disabled>Validate selected prices</button>
+    <button class="btn btn-secondary" id="btnExport">Export CSV</button>
+  </div>
+
+  <div class="status-msg" id="statusMsg"></div>
+</div>
+
+<footer class="footer">
+  French Connoisseur &mdash; Price Updater Pipeline &mdash; <a href="https://github.com/Mick44-dev/fc-price-updater">GitHub</a>
+</footer>
+
+<script src="validate.js"></script>
+</body>
+</html>
