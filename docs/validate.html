@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>French Connoisseur — Price Validation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+  <header class="header">
+    <img src="https://www.frenchconnoisseur.com.au/cdn/shop/files/logo-embleme.png?v=1782913967&width=300" alt="French Connoisseur" class="logo">
+    <h1>Price Update Validation</h1>
+    <p class="subtitle" id="subtitle">Loading...</p>
+  </header>
+
+  <div class="summary-bar" id="summaryBar">
+    <div class="summary-item">
+      <span class="summary-label">Supplier</span>
+      <span class="summary-value" id="sumSupplier">—</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Price changes</span>
+      <span class="summary-value" id="sumTotal">0</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Selected</span>
+      <span class="summary-value" id="sumSelected">0</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Unmatched refs</span>
+      <span class="summary-value" id="sumUnmatched">0</span>
+    </div>
+  </div>
+
+  <div class="ratios-bar" id="ratiosBar">
+    <span>Taux de change: <strong id="ratioTC">—</strong></span>
+    <span>Coef marge: <strong id="ratioCM">—</strong></span>
+    <span>Ratio emballage: <strong id="ratioRE">—</strong></span>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="btn btn-sm" id="btnSelectAll">Select all</button>
+      <button class="btn btn-sm" id="btnDeselectAll">Deselect all</button>
+      <button class="btn btn-sm" id="btnSelectUp">Select price ↑</button>
+      <button class="btn btn-sm" id="btnSelectDown">Select price ↓</button>
+    </div>
+    <div class="toolbar-right">
+      <input type="text" class="search" id="searchInput" placeholder="Search by ref or name...">
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="priceTable">
+      <thead>
+        <tr>
+          <th class="col-check"><input type="checkbox" id="checkAll"></th>
+          <th class="col-sku">SKU</th>
+          <th class="col-ref">Ref</th>
+          <th class="col-name">Product</th>
+          <th class="col-price old">Old Buy HT (EUR)</th>
+          <th class="col-price new">New Buy HT (EUR)</th>
+          <th class="col-change">Change</th>
+          <th class="col-price aud">Suggested AUD</th>
+          <th class="col-override">Shopify AUD</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="actions">
+    <a href="index.html" class="btn btn-secondary">← New upload</a>
+    <button class="btn btn-primary" id="btnValidate" disabled>Validate selected prices</button>
+    <button class="btn btn-secondary" id="btnExport">Export CSV</button>
+  </div>
+
+  <div class="status-msg" id="statusMsg"></div>
+</div>
+
+<footer class="footer">
+  French Connoisseur &mdash; Price Updater Pipeline &mdash; <a href="https://github.com/Mick44-dev/fc-price-updater">GitHub</a>
+</footer>
+
+<script>
+(function () {
+  var VALIDATE_URL = 'https://automate.libraudit.tech/webhook/fc-price-validate';
+  var diffData = [];
+  var selectedSet = new Set();
+
+  var params = new URLSearchParams(window.location.search);
+  var sessionToken = params.get('token') || '';
+
+  async function init() {
+    if (!sessionToken) {
+      showStatus('error', 'Missing session token. Open this page from the upload result.');
+      return;
+    }
+
+    try {
+      var resp = await fetch('https://automate.libraudit.tech/webhook/fc-price-data?token=' + sessionToken);
+      if (!resp.ok) throw new Error('Failed to load price data');
+      var payload = await resp.json();
+      diffData = payload.diff || [];
+      var ratios = payload.ratios || {};
+
+      document.getElementById('subtitle').textContent =
+        payload.supplier + ' — ' + diffData.length + ' price changes — ' + new Date().toLocaleDateString('en-AU');
+      document.getElementById('sumSupplier').textContent = payload.supplier;
+      document.getElementById('sumTotal').textContent = diffData.length;
+      document.getElementById('sumUnmatched').textContent = (payload.unmatched || []).length;
+
+      if (ratios.tauxChange) document.getElementById('ratioTC').textContent = ratios.tauxChange;
+      if (ratios.coefMarge) document.getElementById('ratioCM').textContent = ratios.coefMarge;
+      if (ratios.ratioPoids) document.getElementById('ratioRE').textContent = (ratios.ratioPoids * 100) + '%';
+
+      renderTable(diffData);
+    } catch (e) {
+      showStatus('error', 'Could not load price data: ' + e.message);
+    }
+  }
+
+  function renderTable(items) {
+    var tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    items.forEach(function (item, idx) {
+      var oldP = item.oldPrixAchatHT || 0;
+      var newP = item.newPrixAchatHT || 0;
+      var pct = oldP > 0 ? ((newP - oldP) / oldP * 100) : 0;
+      var cls = pct > 0 ? 'price-up' : pct < 0 ? 'price-down' : 'price-same';
+      var arrow = pct > 0 ? '↑' : pct < 0 ? '↓' : '=';
+      var suggested = item.newPrixVenteAUD || 0;
+      var shopifyDefault = item.oldPrixVenteAUD || suggested;
+
+      var tr = document.createElement('tr');
+      tr.dataset.idx = idx;
+      tr.innerHTML =
+        '<td class="col-check"><input type="checkbox" class="row-check" data-idx="' + idx + '"></td>' +
+        '<td class="col-sku">' + esc(item.sku) + '</td>' +
+        '<td class="col-ref">' + esc(item.ref) + '</td>' +
+        '<td class="col-name">' + esc(item.nom) + '</td>' +
+        '<td class="col-price old">' + oldP.toFixed(2) + '</td>' +
+        '<td class="col-price new">' + newP.toFixed(2) + '</td>' +
+        '<td class="col-change ' + cls + '">' + arrow + Math.abs(pct).toFixed(1) + '%</td>' +
+        '<td class="col-price aud">' + suggested.toFixed(2) + '</td>' +
+        '<td class="col-override"><input type="number" class="override-input" data-idx="' + idx + '" value="' + shopifyDefault + '" step="1" min="0"></td>';
+      tbody.appendChild(tr);
+    });
+    updateSummary();
+  }
+
+  function updateSummary() {
+    var count = selectedSet.size;
+    document.getElementById('sumSelected').textContent = count;
+    document.getElementById('btnValidate').disabled = count === 0;
+  }
+
+  function toggleRow(idx, checked) {
+    if (checked) { selectedSet.add(idx); } else { selectedSet.delete(idx); }
+    var tr = document.querySelector('tr[data-idx="' + idx + '"]');
+    if (tr) tr.classList.toggle('selected', checked);
+    updateSummary();
+  }
+
+  document.getElementById('tableBody').addEventListener('change', function (e) {
+    if (e.target.classList.contains('row-check')) {
+      toggleRow(parseInt(e.target.dataset.idx), e.target.checked);
+    }
+  });
+
+  document.getElementById('checkAll').addEventListener('change', function (e) {
+    document.querySelectorAll('.row-check').forEach(function (cb) {
+      cb.checked = e.target.checked;
+      toggleRow(parseInt(cb.dataset.idx), e.target.checked);
+    });
+  });
+
+  document.getElementById('btnSelectAll').addEventListener('click', function () {
+    document.querySelectorAll('.row-check').forEach(function (cb) { cb.checked = true; toggleRow(parseInt(cb.dataset.idx), true); });
+  });
+
+  document.getElementById('btnDeselectAll').addEventListener('click', function () {
+    document.querySelectorAll('.row-check').forEach(function (cb) { cb.checked = false; toggleRow(parseInt(cb.dataset.idx), false); });
+  });
+
+  document.getElementById('btnSelectUp').addEventListener('click', function () {
+    diffData.forEach(function (d, i) {
+      var up = (d.newPrixAchatHT || 0) > (d.oldPrixAchatHT || 0);
+      var cb = document.querySelector('.row-check[data-idx="' + i + '"]');
+      if (cb) { cb.checked = up; toggleRow(i, up); }
+    });
+  });
+
+  document.getElementById('btnSelectDown').addEventListener('click', function () {
+    diffData.forEach(function (d, i) {
+      var down = (d.newPrixAchatHT || 0) < (d.oldPrixAchatHT || 0);
+      var cb = document.querySelector('.row-check[data-idx="' + i + '"]');
+      if (cb) { cb.checked = down; toggleRow(i, down); }
+    });
+  });
+
+  document.getElementById('searchInput').addEventListener('input', function () {
+    var q = this.value.toLowerCase();
+    document.querySelectorAll('#tableBody tr').forEach(function (tr) {
+      var idx = parseInt(tr.dataset.idx);
+      var item = diffData[idx];
+      var match = !q || (item.sku || '').toLowerCase().includes(q) || (item.ref || '').toLowerCase().includes(q) || (item.nom || '').toLowerCase().includes(q);
+      tr.style.display = match ? '' : 'none';
+    });
+  });
+
+  document.getElementById('btnValidate').addEventListener('click', async function () {
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    var validated = [];
+    selectedSet.forEach(function (idx) {
+      var overrideInput = document.querySelector('.override-input[data-idx="' + idx + '"]');
+      var prixShopifyAUD = overrideInput ? parseFloat(overrideInput.value) : null;
+      var item = diffData[idx];
+      validated.push({
+        rowId: item.rowId,
+        sku: item.sku,
+        ref: item.ref,
+        newPrixAchatHT: item.newPrixAchatHT,
+        newPrixVenteAUD: item.newPrixVenteAUD,
+        prixShopifyAUD: prixShopifyAUD || item.newPrixVenteAUD,
+        poidsNet: item.poidsNet,
+        poidsBrut: item.poidsBrut
+      });
+    });
+
+    try {
+      var resp = await fetch(VALIDATE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: sessionToken, items: validated })
+      });
+      if (!resp.ok) throw new Error('Server error');
+      showStatus('success', validated.length + ' prices validated and updated in NocoDB.');
+      btn.textContent = 'Validated ✓';
+    } catch (e) {
+      showStatus('error', 'Validation failed: ' + e.message);
+      btn.disabled = false;
+      btn.textContent = 'Validate selected prices';
+    }
+  });
+
+  document.getElementById('btnExport').addEventListener('click', function () {
+    var rows = [['SKU', 'Ref', 'Product', 'Old Buy EUR', 'New Buy EUR', 'Change %', 'Suggested AUD', 'Shopify AUD']];
+    diffData.forEach(function (d) {
+      var pct = d.oldPrixAchatHT > 0 ? ((d.newPrixAchatHT - d.oldPrixAchatHT) / d.oldPrixAchatHT * 100) : 0;
+      rows.push([d.sku, d.ref, d.nom, d.oldPrixAchatHT, d.newPrixAchatHT, pct.toFixed(1) + '%', d.newPrixVenteAUD, d.oldPrixVenteAUD]);
+    });
+    var csv = rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'fc-price-update-' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  function showStatus(type, msg) {
+    var el = document.getElementById('statusMsg');
+    el.className = 'status-msg ' + type;
+    el.textContent = msg;
+  }
+
+  function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+  init();
+})();
+</script>
+</body>
+</html>

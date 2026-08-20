@@ -11,13 +11,29 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#F5F0EB;
 .summary-label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#788091;margin-bottom:4px}
 .summary-value{display:block;font-size:22px;font-weight:700;color:#6A254B}
 
+.ratios-bar{display:flex;gap:24px;justify-content:center;margin-bottom:20px;padding:12px 20px;background:#fff;border:1px solid #E0D6CC;border-radius:10px;font-size:13px;color:#788091}
+.ratios-bar strong{color:#6A254B}
+
+.upload-card{max-width:520px;margin:40px auto;background:#fff;border:1px solid #E0D6CC;border-radius:14px;padding:32px}
+.upload-zone{border:2px dashed #B2886C;border-radius:10px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-zone:hover,.upload-zone.dragover{border-color:#6A254B;background:#FAF7F4}
+.upload-icon{font-size:48px;margin-bottom:12px}
+.upload-text{font-size:16px;font-weight:600;color:#323843;margin-bottom:6px}
+.upload-hint{font-size:12px;color:#788091}
+.upload-form{margin-top:20px}
+.file-info{padding:12px;background:#FAF7F4;border-radius:8px;font-size:13px;color:#6A254B;font-weight:600;margin-bottom:16px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#788091;margin-bottom:6px}
+.form-select{width:100%;padding:10px 12px;border:1px solid #B2886C;border-radius:6px;font-size:14px;outline:none;background:#fff}
+.form-select:focus{border-color:#6A254B}
+
 .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
 .toolbar-left{display:flex;gap:6px;flex-wrap:wrap}
 .toolbar-right{flex:0 0 260px}
 .search{width:100%;padding:8px 12px;border:1px solid #B2886C;border-radius:6px;font-size:13px;outline:none;transition:border-color .2s}
 .search:focus{border-color:#6A254B}
 
-.btn{display:inline-block;padding:10px 20px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn{display:inline-block;padding:10px 20px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none;text-align:center}
 .btn-sm{padding:6px 12px;font-size:12px;border-radius:5px;background:#fff;border:1px solid #B2886C;color:#323843}
 .btn-sm:hover{background:#F5F0EB;border-color:#6A254B}
 .btn-primary{background:#6A254B;color:#fff;font-size:15px;padding:14px 32px;border-radius:8px}
@@ -38,7 +54,6 @@ tr.selected{background:#F5F0EB}
 .col-sku{width:140px}
 .col-ref{width:90px}
 .col-name{min-width:180px}
-.col-collection{width:120px}
 .col-price{width:100px;text-align:right}
 .col-change{width:80px;text-align:center}
 .col-override{width:110px}
@@ -54,7 +69,7 @@ tr.selected{background:#F5F0EB}
 .override-input{width:90px;padding:4px 6px;border:1px solid #E0D6CC;border-radius:4px;font-size:13px;text-align:right;outline:none}
 .override-input:focus{border-color:#6A254B;box-shadow:0 0 0 2px rgba(106,37,75,.12)}
 
-.actions{display:flex;justify-content:center;gap:16px;margin-top:24px}
+.actions{display:flex;justify-content:center;gap:16px;margin-top:24px;align-items:center}
 .status-msg{text-align:center;margin-top:16px;padding:16px;border-radius:8px;font-weight:600;display:none}
 .status-msg.success{display:block;background:#E8F8F0;color:#1A7A4C}
 .status-msg.error{display:block;background:#FDE8E8;color:#C0392B}
@@ -63,10 +78,12 @@ tr.selected{background:#F5F0EB}
   .summary-bar{grid-template-columns:repeat(2,1fr)}
   .toolbar{flex-direction:column;align-items:flex-start}
   .toolbar-right{flex:1 1 100%;width:100%}
+  .ratios-bar{flex-wrap:wrap;gap:12px}
 }
 
 @media(max-width:600px){
   .summary-bar{grid-template-columns:1fr}
   .actions{flex-direction:column}
   .btn-primary,.btn-secondary{width:100%}
+  .upload-card{margin:20px auto;padding:20px}
 }

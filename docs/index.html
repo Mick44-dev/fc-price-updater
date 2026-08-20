@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>French Connoisseur — Price Validation</title>
+<title>French Connoisseur — Price Updater</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,65 +11,30 @@
 <div class="container">
   <header class="header">
     <img src="https://www.frenchconnoisseur.com.au/cdn/shop/files/logo-embleme.png?v=1782913967&width=300" alt="French Connoisseur" class="logo">
-    <h1>Price Update Validation</h1>
-    <p class="subtitle" id="subtitle">Loading...</p>
+    <h1>Price Updater</h1>
+    <p class="subtitle">Upload a supplier tariff to compare with your catalogue</p>
   </header>
 
-  <div class="summary-bar" id="summaryBar">
-    <div class="summary-item">
-      <span class="summary-label">Supplier</span>
-      <span class="summary-value" id="sumSupplier">—</span>
+  <div class="upload-card">
+    <div class="upload-zone" id="dropZone">
+      <div class="upload-icon">📊</div>
+      <p class="upload-text">Drop your Excel file here or click to browse</p>
+      <p class="upload-hint">.xlsx files only</p>
+      <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
     </div>
-    <div class="summary-item">
-      <span class="summary-label">Products</span>
-      <span class="summary-value" id="sumTotal">0</span>
-    </div>
-    <div class="summary-item">
-      <span class="summary-label">Selected</span>
-      <span class="summary-value" id="sumSelected">0</span>
-    </div>
-    <div class="summary-item">
-      <span class="summary-label">Avg change</span>
-      <span class="summary-value" id="sumAvgChange">0%</span>
-    </div>
-  </div>
 
-  <div class="toolbar">
-    <div class="toolbar-left">
-      <button class="btn btn-sm" id="btnSelectAll">Select all</button>
-      <button class="btn btn-sm" id="btnDeselectAll">Deselect all</button>
-      <button class="btn btn-sm" id="btnSelectUp">Select price ↑</button>
-      <button class="btn btn-sm" id="btnSelectDown">Select price ↓</button>
-    </div>
-    <div class="toolbar-right">
-      <input type="text" class="search" id="searchInput" placeholder="Search by ref or name...">
-    </div>
-  </div>
+    <div class="upload-form" id="uploadForm" style="display:none">
+      <div class="file-info" id="fileInfo"></div>
 
-  <div class="table-wrapper">
-    <table id="priceTable">
-      <thead>
-        <tr>
-          <th class="col-check"><input type="checkbox" id="checkAll"></th>
-          <th class="col-sku">SKU</th>
-          <th class="col-ref">Ref</th>
-          <th class="col-name">Product</th>
-          <th class="col-collection">Collection</th>
-          <th class="col-price old">Old Buy (EUR)</th>
-          <th class="col-price new">New Buy (EUR)</th>
-          <th class="col-change">Change</th>
-          <th class="col-price aud">Sell AUD</th>
-          <th class="col-price aud">GST AUD</th>
-          <th class="col-override">Override AUD</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
+      <div class="form-group">
+        <label for="supplierSelect">Supplier</label>
+        <select id="supplierSelect" class="form-select">
+          <option value="CRISTEL">CRISTEL</option>
+        </select>
+      </div>
 
-  <div class="actions">
-    <button class="btn btn-primary" id="btnValidate" disabled>Validate selected prices</button>
-    <button class="btn btn-secondary" id="btnExport">Export CSV</button>
+      <button class="btn btn-primary" id="btnUpload" style="width:100%">Analyse tariff & compare prices</button>
+    </div>
   </div>
 
   <div class="status-msg" id="statusMsg"></div>
@@ -79,6 +44,85 @@
   French Connoisseur &mdash; Price Updater Pipeline &mdash; <a href="https://github.com/Mick44-dev/fc-price-updater">GitHub</a>
 </footer>
 
-<script src="validate.js"></script>
+<script>
+(function () {
+  var dropZone = document.getElementById('dropZone');
+  var fileInput = document.getElementById('fileInput');
+  var uploadForm = document.getElementById('uploadForm');
+  var fileInfo = document.getElementById('fileInfo');
+  var btnUpload = document.getElementById('btnUpload');
+  var selectedFile = null;
+
+  dropZone.addEventListener('click', function () { fileInput.click(); });
+
+  dropZone.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', function () {
+    dropZone.classList.remove('dragover');
+  });
+
+  dropZone.addEventListener('drop', function (e) {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener('change', function () {
+    if (this.files.length) handleFile(this.files[0]);
+  });
+
+  function handleFile(file) {
+    if (!file.name.match(/\.xlsx?$/i)) {
+      showStatus('error', 'Please select an .xlsx file');
+      return;
+    }
+    selectedFile = file;
+    fileInfo.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+    uploadForm.style.display = 'block';
+    dropZone.style.display = 'none';
+  }
+
+  btnUpload.addEventListener('click', async function () {
+    if (!selectedFile) return;
+    btnUpload.disabled = true;
+    btnUpload.textContent = 'Processing...';
+
+    var formData = new FormData();
+    formData.append('supplier', document.getElementById('supplierSelect').value);
+    formData.append('data', selectedFile);
+
+    try {
+      var resp = await fetch('https://automate.libraudit.tech/webhook/fc-price-upload', {
+        method: 'POST',
+        body: formData
+      });
+      if (!resp.ok) throw new Error('Server error: ' + resp.status);
+      var data = await resp.json();
+
+      if (data.diffCount === 0 && data.unmatchedCount === 0) {
+        showStatus('error', 'No matching products found. Check the supplier name.');
+        btnUpload.disabled = false;
+        btnUpload.textContent = 'Analyse tariff & compare prices';
+        return;
+      }
+
+      window.location.href = 'validate.html?token=' + data.token;
+    } catch (e) {
+      showStatus('error', 'Upload failed: ' + e.message);
+      btnUpload.disabled = false;
+      btnUpload.textContent = 'Analyse tariff & compare prices';
+    }
+  });
+
+  function showStatus(type, msg) {
+    var el = document.getElementById('statusMsg');
+    el.className = 'status-msg ' + type;
+    el.textContent = msg;
+  }
+})();
+</script>
 </body>
 </html>
