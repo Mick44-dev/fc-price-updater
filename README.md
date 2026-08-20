@@ -48,7 +48,7 @@ fc-price-updater/
 │   ├── match-catalogue.mjs     # Match supplier refs to catalogue
 │   ├── calculate-prices.mjs    # Discount, exchange rate, margins → AUD
 │   └── process-all.mjs         # Full pipeline: parse → match → diff
-├── web/
+├── docs/
 │   ├── index.html              # Price validation page (GitHub Pages)
 │   ├── style.css               # FC brand styles
 │   └── validate.js             # Frontend logic + webhook submission
